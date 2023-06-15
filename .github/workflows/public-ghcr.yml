@@ -1,15 +1,21 @@
 name: Docker Image CI for GHCR
 
 on: 
-push
+  push:
+    branches:
+      - master # Or whichever branch you want to trigger this action
 
 jobs:
-build_and_publich:
-runs-on: ubuntu-latest
-steps:
--uses: actions/checkout@v3
--name: Build and push the image
-run: |
-docker login --username jurre-vlas --password ${{ secrets.GH_PAT}} ghcr.io
-docker build . --tag ghcr.io/jurre-vlas/cdn-ghcr:latest
-docker push ghcr.io/jurre-vlas/cdn-ghcr:latest
+  build_and_publish:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Login to GitHub Container Registry
+      run: echo ${{ secrets.GH_PAT }} | docker login ghcr.io -u jurre-vlas --password-stdin
+
+    - name: Build and push the image
+      run: |
+        docker build . --tag ghcr.io/jurre-vlas/cdn-ghcr:latest
+        docker push ghcr.io/jurre-vlas/cdn-ghcr:latest
