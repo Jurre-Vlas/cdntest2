@@ -11,8 +11,9 @@ namespace Eindopdrachtcnd2.Services
 {
     public interface ICardUserService
     {
-        Task<ServiceResult> CreateCardUserAsync(int cardId, string userId, string user);
-        Task<ServiceResult> RemoveCardUserAsync(int cardId, string userId, string user);
+        Task<ServiceResult> CreateCardUserAsync(int cardId, string NameUser, string user);
+        Task<ServiceResult> RemoveCardUserAsync(int cardId, string NameUser, string user);
+        Task<ServiceResult<IEnumerable<CardUserDTO>>> GetAllUsersFromCardIdAsync(int cardId, string user);
     }
 
     public class CardUserService : ICardUserService
@@ -26,7 +27,7 @@ namespace Eindopdrachtcnd2.Services
             _groupUserService = groupUserService;
         }
 
-        public async Task<ServiceResult> CreateCardUserAsync(int cardId, string userId, string user)
+        public async Task<ServiceResult> CreateCardUserAsync(int cardId, string NameUser, string user)
         {
             var result = new ServiceResult();
 
@@ -55,7 +56,7 @@ namespace Eindopdrachtcnd2.Services
                     return result;
                 }
 
-                var userToAdd = await _db.Users.FindAsync(userId);
+                var userToAdd = await _db.Users.SingleOrDefaultAsync(c => c.Name ==NameUser );
                 if (userToAdd == null)
                 {
                     result.ErrorCode = ErrorCodeEnum.NotFound;
@@ -63,7 +64,7 @@ namespace Eindopdrachtcnd2.Services
                     return result;
                 }
 
-                var existingCardUser = await _db.CardUsers.FirstOrDefaultAsync(cu => cu.CardId == cardId && cu.UserId == userId);
+                var existingCardUser = await _db.CardUsers.FirstOrDefaultAsync(cu => cu.CardId == cardId && cu.UserId == userToAdd.Id);
                 if (existingCardUser != null)
                 {
                     result.ErrorCode = ErrorCodeEnum.BadRequest;
@@ -71,7 +72,7 @@ namespace Eindopdrachtcnd2.Services
                     return result;
                 }
 
-                _db.CardUsers.Add(new CardUser { CardId = cardId, UserId = userId });
+                _db.CardUsers.Add(new CardUser { CardId = cardId, UserId = userToAdd.Id });
                 await _db.SaveChangesAsync();
 
                 result.ErrorCode = ErrorCodeEnum.Success;
@@ -85,7 +86,7 @@ namespace Eindopdrachtcnd2.Services
             return result;
         }
 
-        public async Task<ServiceResult> RemoveCardUserAsync(int cardId, string userId, string user)
+        public async Task<ServiceResult> RemoveCardUserAsync(int cardId, string NameUser, string user)
         {
             var result = new ServiceResult();
 
@@ -114,7 +115,9 @@ namespace Eindopdrachtcnd2.Services
                     return result;
                 }
 
-                var cardUser = await _db.CardUsers.FirstOrDefaultAsync(cu => cu.CardId == cardId && cu.UserId == userId);
+                var userCard = await _db.Users.SingleOrDefaultAsync(c => c.Name == NameUser);
+
+                var cardUser = await _db.CardUsers.FirstOrDefaultAsync(cu => cu.CardId == cardId && cu.UserId == userCard.Id);
                 if (cardUser == null)
                 {
                     result.ErrorCode = ErrorCodeEnum.NotFound;
@@ -124,6 +127,58 @@ namespace Eindopdrachtcnd2.Services
 
                 _db.CardUsers.Remove(cardUser);
                 await _db.SaveChangesAsync();
+
+                result.ErrorCode = ErrorCodeEnum.Success;
+            }
+            catch (Exception ex)
+            {
+                result.ErrorCode = ErrorCodeEnum.InternalServerError;
+                result.ErrorMessage = ex.Message;
+            }
+
+            return result;
+        }
+
+        public async Task<ServiceResult<IEnumerable<CardUserDTO>>> GetAllUsersFromCardIdAsync(int cardId, string user)
+        {
+            var result = new ServiceResult<IEnumerable<CardUserDTO>>();
+
+            try
+            {
+                var card = await _db.Cards.FindAsync(cardId);
+                if (card == null)
+                {
+                    result.ErrorCode = ErrorCodeEnum.NotFound;
+                    result.ErrorMessage = "Card not found";
+                    return result;
+                }
+
+                var authenticatedUserCheck = await _db.Users.SingleOrDefaultAsync(u => u.UserName == user);
+                if (authenticatedUserCheck == null)
+                {
+                    result.ErrorCode = ErrorCodeEnum.BadRequest;
+                    result.ErrorMessage = "Authenticated User not found";
+                    return result;
+                }
+
+                if (!_groupUserService.IsInGroup(user, card.GroupId).Result)
+                {
+                    result.ErrorCode = ErrorCodeEnum.BadRequest;
+                    result.ErrorMessage = "User is not in group";
+                    return result;
+                }
+
+
+                var cardUsers = await _db.CardUsers
+                    .Where(cu => cu.CardId == cardId)
+                    .Select(cu => new CardUserDTO
+                    {
+                        UserId = cu.UserId,
+                        CardId = cu.CardId
+                    })
+                    .ToListAsync();
+
+                result.Result = cardUsers;
 
                 result.ErrorCode = ErrorCodeEnum.Success;
             }

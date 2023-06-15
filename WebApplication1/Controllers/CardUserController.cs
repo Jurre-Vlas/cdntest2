@@ -19,15 +19,15 @@ namespace Eindopdrachtcnd2.Controllers
             _cardUserService = cardUserService;
         }
 
-        [HttpPost("{cardId:int}/users/{userId}")]
+        [HttpPost("{cardId:int}/users/{NameUser}")]
         [Authorize(Roles = "Admin, User")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ProblemDetails))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
         [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
-        public async Task<IActionResult> CreateCardUser(int cardId, string userId)
+        public async Task<IActionResult> CreateCardUser(int cardId, string NameUser)
         {
             var user = User.FindFirstValue(ClaimTypes.Name);
-            var serviceResult = await _cardUserService.CreateCardUserAsync(cardId, userId, user);
+            var serviceResult = await _cardUserService.CreateCardUserAsync(cardId, NameUser, user);
             switch (serviceResult.ErrorCode)
             {
                 case ErrorCodeEnum.Success:
@@ -39,19 +39,39 @@ namespace Eindopdrachtcnd2.Controllers
             }
         }
 
-        [HttpDelete("{cardId:int}/users/{userId}")]
+        [HttpDelete("{cardId:int}/users/{NameUser}")]
         [Authorize(Roles = "Admin, User")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ProblemDetails))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ProblemDetails))]
         [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
-        public async Task<IActionResult> RemoveCardUser(int cardId, string userId)
+        public async Task<IActionResult> RemoveCardUser(int cardId, string NameUser)
         {
             var user = User.FindFirstValue(ClaimTypes.Name);
-            var serviceResult = await _cardUserService.RemoveCardUserAsync(cardId, userId, user);
+            var serviceResult = await _cardUserService.RemoveCardUserAsync(cardId, NameUser, user);
             switch (serviceResult.ErrorCode)
             {
                 case ErrorCodeEnum.Success:
                     return Ok();
+                case ErrorCodeEnum.NotFound:
+                    return Problem(serviceResult.ErrorMessage, statusCode: StatusCodes.Status404NotFound);
+                default:
+                    return Problem(serviceResult.ErrorMessage, statusCode: StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        [HttpGet("{cardId:int}")]
+        [Authorize(Roles = "Admin, User")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ProblemDetails))]
+        [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ProblemDetails))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
+        public async Task<IActionResult> GetAllUsersFromCardIdAsync(int cardId)
+        {
+            var user = User.FindFirstValue(ClaimTypes.Name);
+            var serviceResult = await _cardUserService.GetAllUsersFromCardIdAsync(cardId,  user);
+            switch (serviceResult.ErrorCode)
+            {
+                case ErrorCodeEnum.Success:
+                    return Ok(serviceResult);
                 case ErrorCodeEnum.NotFound:
                     return Problem(serviceResult.ErrorMessage, statusCode: StatusCodes.Status404NotFound);
                 default:
