@@ -1,12 +1,12 @@
-name: Continuous Integration
+name: Docker Image CI and .NET Continuous Integration
 
-on:
+on: 
   push:
     branches:
       - main
 
 jobs:
-  build-and-test:
+  build_and_test:
     runs-on: ubuntu-latest
 
     steps:
@@ -39,3 +39,16 @@ jobs:
           else
             echo "No test results found. Proceeding with push to main branch."
           fi
+
+  build_and_publish:
+    needs: build_and_test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Build and push the image
+      run: |
+        docker login --username jurre-vlas --password ${{ secrets.GH_PAT }} ghcr.io
+        docker build . --tag ghcr.io/jurre-vlas/cdn-eindopdrachtcdn:latest
+        docker push ghcr.io/jurre-vlas/eindopdrachtcdn:latest
