@@ -11,10 +11,8 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Login to GitHub Container Registry
-      run: echo ${{ secrets.GH_PAT }} | docker login ghcr.io -u jurre-vlas --password-stdin
-
     - name: Build and push the image
       run: |
-        docker build . --tag ghcr.io/jurre-vlas/cdn-ghcr:latest
-        docker push ghcr.io/jurre-vlas/cdn-ghcr:latest
+       docker login --username jurre-vlas --password ${{ secret.GH_PAT}} ghcr.io
+        docker build . --tag ghcr.io/jurre-vlas/cdn-eindopdrachtcdn:latest
+        docker push ghcr.io/jurre-vlas/eindopdrachtcdn:latest
