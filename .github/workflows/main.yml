@@ -60,7 +60,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: ./Eindopdracht/eindopdrachtcnd2
+          context: Eindopdracht/eindopdrachtcnd2
           dockerfile: Dockerfile
           push: true
           tags: ghcr.io/jurre-vlas/eindopdrachtcdn:latest
