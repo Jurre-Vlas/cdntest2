@@ -1,6 +1,6 @@
-name: Docker Image CI and .NET Continuous Integration
+name: Continuous Integration
 
-on: 
+on:
   push:
     branches:
       - main
@@ -40,15 +40,27 @@ jobs:
             echo "No test results found. Proceeding with push to main branch."
           fi
 
-  build_and_publish:
+  build_and_push:
     needs: build_and_test
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    - name: Build and push the image
-      run: |
-        docker login --username jurre-vlas --password ${{ secrets.GH_PAT }} ghcr.io
-        docker build . --tag ghcr.io/jurre-vlas/cdn-eindopdrachtcdn:latest
-        docker push ghcr.io/jurre-vlas/eindopdrachtcdn:latest
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1 
+        with:
+          registry: ghcr.io
+          username: jurre-vlas
+          password: ${{ secrets.GH_PAT }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+        
+          context: ./Eindopdracht/eindopdrachtcnd2
+          push: true
+          tags: ghcr.io/jurre-vlas/eindopdrachtcdn:latest
