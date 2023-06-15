@@ -6,8 +6,42 @@ on:
       - main
 
 jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '7.0.*' 
+
+      - name: Restore dependencies
+        run: dotnet restore WebApplication1/Eindopdrachtcdn2.csproj
+
+      - name: Build project
+        run: dotnet build WebApplication1/Eindopdrachtcdn2.csproj --configuration Release
+
+      - name: Run tests
+        run: dotnet test EindopdrachtTestProject/EindopdrachtTestProject.csproj --configuration Release --logger "trx;LogFileName=testresults.trx"
+
+      - name: Check test results
+        run: |
+          if [ -f "EindopdrachtTestProject/TestResults/testresults.trx" ]; then
+            if grep -q "<ResultSummary outcome=\"Failed\"" "EindopdrachtTestProject/TestResults/testresults.trx"; then
+              echo "Tests failed. Aborting push to main branch."
+              exit 1
+            else
+              echo "All tests passed. Proceeding with push to main branch."
+            fi
+          else
+            echo "No test results found. Proceeding with push to main branch."
+          fi
 
   build_and_push:
+    needs: build_and_test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
