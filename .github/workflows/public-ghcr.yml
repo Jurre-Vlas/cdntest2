@@ -1,9 +1,8 @@
 name: Docker Image CI for GHCR
 
 on: 
-  push:
-    branches:
-      - master # Or whichever branch you want to trigger this action
+  push
+
 
 jobs:
   build_and_publish:
