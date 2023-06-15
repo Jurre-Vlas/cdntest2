@@ -19,10 +19,10 @@ jobs:
           dotnet-version: '7.0.*' 
 
       - name: Restore dependencies
-        run: dotnet restore WebApplication1/Eindopdrachtcdn2.csproj
+        run: dotnet restore Eindopdrachtcdn2.csproj
 
       - name: Build project
-        run: dotnet build WebApplication1/Eindopdrachtcdn2.csproj --configuration Release
+        run: dotnet build Eindopdrachtcdn2.csproj --configuration Release
 
       - name: Run tests
         run: dotnet test EindopdrachtTestProject/EindopdrachtTestProject.csproj --configuration Release --logger "trx;LogFileName=testresults.trx"
